@@ -5,7 +5,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
-    maxAge: 60 * 60 * 24, // 1 día
+    maxAge: 60 * 60 * 24,
   },
   providers: [
     CredentialsProvider({
@@ -17,51 +17,56 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        // Llama a tu NestJS API
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: credentials.email,
-            password: credentials.password,
-          }),
-        });
+        try {
+          const res = await fetch(`${process.env.API_URL}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: credentials.email,
+              password: credentials.password,
+            }),
+          });
 
-        if (!res.ok) return null;
+          if (!res.ok) return null;
 
-        const data = await res.json();
-        // Esperado: { access_token, user: { id, name, email, avatar? } }
-        if (!data?.access_token || !data?.user) return null;
+          const data = await res.json();
+          // Esperado: { access_token, user: { id, name, email, avatar? } }
+          if (!data?.access_token || !data?.user) return null;
 
-        return {
-          id: data.user.id,
-          name: data.user.name,
-          email: data.user.email,
-          image: data.user.avatar ?? null,
-          accessToken: data.access_token,
-        };
+          return {
+            id: data.user.id,
+            name: data.user.name,
+            email: data.user.email,
+            image: data.user.avatar ?? null,
+            accessToken: data.access_token,
+          };
+        } catch (e) {
+          console.error("Authorize error:", e);
+          return null;
+        }
       },
     }),
   ],
   pages: {
-    signIn: "/login", // opcional si querés una página custom
+    signIn: "/login",
   },
   callbacks: {
     async jwt({ token, user }) {
-      // Al login, guarda el accessToken; en refresh podría renovarse
+      // En login, persiste accessToken en el jwt
       if (user?.accessToken) {
         token.accessToken = user.accessToken as string;
       }
       return token;
     },
     async session({ session, token }) {
-      // Expone el accessToken en session para usarlo en fetch del frontend
+      // Expone el accessToken en session
       (session as any).accessToken = token.accessToken;
       return session;
     },
   },
-  // Seguridad (dominio, HTTPS, cookies, etc.) según tu despliegue
+  // Recomendado: configurar correctamente cookies en producción
 };
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
+``
