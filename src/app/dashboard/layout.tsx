@@ -9,7 +9,7 @@ import Sidebar from "@/components/dashboard/Sidebar";
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
-
+  
   return (
     <div className="min-h-screen bg-gray-100 flex">
       {/* Sidebar fijo a la izquierda */}

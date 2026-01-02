@@ -35,10 +35,13 @@ export const authOptions: NextAuthOptions = {
 
           return {
             id: data.user.id,
-            name: data.user.name,
+            name: data.user.firstName,
+            lastName: data.user.lastName,
             email: data.user.email,
-            image: data.user.avatar ?? null,
             accessToken: data.access_token,
+            phone: data.user.phone,
+            contact: data.user.contact,
+            location: data.user.location
           };
         } catch (e) {
           console.error("Authorize error:", e);
@@ -50,20 +53,50 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
+
   callbacks: {
     async jwt({ token, user }) {
-      // En login, persiste accessToken en el jwt
-      if (user?.accessToken) {
-        token.accessToken = user.accessToken as string;
+      // Durante el login, `user` viene de authorize(); en requests subsecuentes no.
+      if (user) {
+        token.id = user.id;
+        token.name = [user.name, user.lastName].filter(Boolean).join(' ').trim() || user.name || null;
+        token.email = user.email;
+  
+        // Propios:
+        token.lastName = user.lastName;
+        token.phone = user.phone;
+        token.contact = user.contact;
+        token.location = user.location;
+  
+        // Token de acceso
+        token.accessToken = user.accessToken;
       }
       return token;
     },
+  
     async session({ session, token }) {
-      // Expone el accessToken en session
+      // Reemplaza/expande session.user con lo que guardaste en el token
+      session.user = {
+        // Estos tres son los que NextAuth expone por defecto:
+        name: (token.name as string) ?? session.user?.name ?? null,
+        email: (token.email as string) ?? session.user?.email ?? null,
+        image: session.user?.image ?? null,
+  
+        // Campos custom que quieras tener en el front:
+        id: token.id as number | string | undefined,
+        lastName: token.lastName as string | undefined,
+        phone: token.phone as string | undefined,
+        contact: token.contact as any,
+        location: token.location as any,
+      } as any;
+  
+      // Exponer el accessToken en la sesión para fetchs autenticados
       (session as any).accessToken = token.accessToken;
+  
       return session;
     },
-  },
+  }
+  
   // Recomendado: configurar correctamente cookies en producción
 };
 
