@@ -1,9 +1,9 @@
 
-// app/components/ClientAddressList.tsx (Client Component)
 "use client";
 
 import { Address } from "@/types/Address";
 import { useState } from "react";
+import { FORM_INITIAL_STATE } from "./utils/FormInitialState";
 
 interface Props {
   addresses: Address[];
@@ -15,15 +15,7 @@ export default function ListAddress({ addresses, accessToken, contactId }: Props
   const [items, setItems] = useState<Address[]>(addresses ?? []);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState<Partial<Address>>({
-    street: "",
-    city: "",
-    state: "",
-    zip: "",
-    country: "Argentina",
-    country_code:'AR',
-    type: ''
-  });
+  const [form, setForm] = useState<Partial<Address>>(FORM_INITIAL_STATE);
   const [error, setError] = useState<string | null>(null);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,43 +28,24 @@ export default function ListAddress({ addresses, accessToken, contactId }: Props
     setError(null);
 
     try {
-      // ⚠️ Ajustá esta ruta a tu backend real:
-      const res = await fetch(`${process.env.API_URL}/contact/${contactId}/addresses`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify({
-          street: form.street,
-          city: form.city,
-          state: form.state,
-          zip: form.zip,
-          country: form.country,
-          country_code: form.country_code,
-          type: form.type
-        }),
-      });
-
-      if (!res.ok) {
-        const errText = await res.text().catch(() => "");
-        throw new Error(`Error al guardar: ${res.status} ${errText}`);
+      const body = {
+        street: form.street,
+        city: form.city,
+        state: form.state,
+        zip: form.zip,
+        country: form.country,
+        country_code: form.country_code,
+        type: form.type
       }
-
+      const path = `/contact/${contactId}/addresses`
+      const method = `POST`
+      const res = await FetchWrapper({path, method, accessToken, body})
       const created: Address = await res.json();
 
       // Actualización optimista
       setItems((prev) => [created, ...prev]);
       setOpen(false);
-      setForm({
-        street: "",
-        city: "",
-        state: "",
-        zip: "",
-        country: "Argentina",
-        country_code: "AR",
-        type: ''
-      });
+      setForm(FORM_INITIAL_STATE);
     } catch (err: any) {
       setError(err?.message ?? "No se pudo guardar la dirección.");
     } finally {
@@ -228,4 +201,3 @@ export default function ListAddress({ addresses, accessToken, contactId }: Props
     </section>
   );
 }
-``
