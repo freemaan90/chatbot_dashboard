@@ -24,7 +24,7 @@ export default function UserForm() {
     setMessage("");
 
     try {
-      const res = await fetch("http://localhost:3000/user", {
+      const res = await fetch(`${process.env.API_URL}/user`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

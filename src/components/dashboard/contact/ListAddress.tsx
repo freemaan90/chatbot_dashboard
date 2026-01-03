@@ -37,7 +37,7 @@ export default function ListAddress({ addresses, accessToken, contactId }: Props
 
     try {
       // ⚠️ Ajustá esta ruta a tu backend real:
-      const res = await fetch(`http://localhost:3000/contact/${contactId}/addresses`, {
+      const res = await fetch(`${process.env.API_URL}/contact/${contactId}/addresses`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

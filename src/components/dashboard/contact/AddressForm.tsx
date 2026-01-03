@@ -31,7 +31,7 @@ export const AddressForm = ({ userId }: Props) => {
                 addresses: [form],
                 userId
             }
-            const res = await fetch("http://localhost:3000/contact", {
+            const res = await fetch(`${process.env.API_URL}/contact`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
