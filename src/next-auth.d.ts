@@ -14,7 +14,7 @@ declare module "next-auth" {
       id?: number | string;
       lastName?: string;
       phone?: string;
-      contact?: unknown;
+      contact?: Contact;
       location?: unknown;
     } & DefaultSession["user"];
 
@@ -24,7 +24,7 @@ declare module "next-auth" {
 
   // Extiende el objeto 'User' que retorna authorize() y que se pasa al callback jwt
   interface User {
-    id: number | string;
+    id: string;
     name: string | null;
     lastName?: string;
     email: string;
@@ -33,9 +33,28 @@ declare module "next-auth" {
     accessToken?: string;
 
     phone?: string;
-    contact?: unknown;
+    contact?: Contact;
     location?: unknown;
   }
+
+ export interface Contact {
+    id: number;
+    company: string | null;
+    website: string | null;
+    addresses: Address[];
+  }
+
+  export interface Address {
+    id: string;
+    zip: string;
+    city: string;
+    type: string;
+    state: string;
+    street: string;
+    country: string;
+    country_code: string;
+  }
+
 }
 
 // También extendé el JWT para que el callback 'jwt' no se queje
