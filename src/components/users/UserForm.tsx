@@ -24,7 +24,7 @@ export default function UserForm() {
     setMessage("");
 
     try {
-      const res = await fetch(`${process.env.API_URL}/user`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

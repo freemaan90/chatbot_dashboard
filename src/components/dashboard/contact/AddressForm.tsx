@@ -1,5 +1,6 @@
 'use client'
 import { useState } from "react";
+import { FORM_INITIAL_STATE } from "./utils/FormInitialState";
 
 interface Props {
     userId: number
@@ -8,15 +9,7 @@ interface Props {
 export const AddressForm = ({ userId }: Props) => {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
-    const [form, setForm] = useState({
-        street: "",
-        city: "",
-        state: "",
-        zip: "",
-        country: "Argentina",
-        country_code: "AR",
-        type: ""
-    });
+    const [form, setForm] = useState(FORM_INITIAL_STATE);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -31,7 +24,7 @@ export const AddressForm = ({ userId }: Props) => {
                 addresses: [form],
                 userId
             }
-            const res = await fetch(`${process.env.API_URL}/contact`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contact`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
@@ -39,15 +32,7 @@ export const AddressForm = ({ userId }: Props) => {
 
             if (!res.ok) throw new Error("Error al agregar la direccion");
             setMessage("Direccion guardada correctamente");
-            setForm({
-                city: '',
-                country: 'Argentina',
-                country_code: 'AR',
-                state: '',
-                street: '',
-                type: '',
-                zip: ''
-            })
+            setForm(FORM_INITIAL_STATE)
         } catch (err: any) {
             setMessage(err.message);
         } finally {

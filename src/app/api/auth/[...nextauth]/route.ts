@@ -1,4 +1,5 @@
 
+import { apiFetchJson, apiFetchJsonSoft } from "@/lib/api";
 import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
@@ -15,44 +16,45 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
 
+
+
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
       
         try {
-          const res = await fetch(`${process.env.API_URL}/auth/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email: credentials.email,
-              password: credentials.password,
-            }),
+          const result = await apiFetchJson('/auth/login', {
+            method: 'POST',
+            body: { email: credentials.email, password: credentials.password },
           });
       
-          if (!res.ok) {
-            // Log detallado para ver por qué cayó
-            const errText = await res.text().catch(() => "");
-            console.warn("Login failed:", res.status, errText);
-            return null;
-          }
+          // ⚠️ 'result' es el wrapper: { ok, status, data, raw }
+          // Lo que te interesa está en result.data
+          const payload = (result as any).data ?? result;
       
-          const data = await res.json();
+          // Opcional de debug (solo en dev):
       
-          // Aceptar variantes de nombres
-          const user = data.user ?? data?.data?.user ?? null;
-          const accessToken = data.access_token ?? data?.token ?? null;
+          const user =
+            payload.user ??
+            payload?.data?.user ?? // por si algún backend envía doble anidación
+            null;
+      
+          const accessToken =
+            payload.access_token ??
+            payload?.token ??
+            payload?.data?.access_token ?? // <-- ✅ mirar aquí
+            null;
       
           if (!user || !accessToken) {
-            console.warn("Login payload missing fields:", data);
+            console.warn('Login payload missing fields:', result);
             return null;
           }
       
-          // Mapear campos con fallback
-          const firstName = user.firstName ?? user.name ?? "";
-          const lastName = user.lastName ?? user.surname ?? "";
+          const firstName = user.firstName ?? user.name ?? '';
+          const lastName = user.lastName ?? user.surname ?? '';
       
           return {
-            id: String(user.id), // NextAuth suele esperar string
-            name: [firstName, lastName].filter(Boolean).join(" ") || user.name || "",
+            id: String(user.id),
+            name: [firstName, lastName].filter(Boolean).join(' ') || user.name || '',
             email: user.email,
             lastName,
             accessToken,
@@ -61,11 +63,13 @@ export const authOptions: NextAuthOptions = {
             location: user.location ?? null,
           } as any;
         } catch (e) {
-          console.error("Authorize error:", e);
+          console.warn('Login failed:', e);
           return null;
         }
       }
       
+
+
     }),
   ],
   pages: {
@@ -87,11 +91,12 @@ export const authOptions: NextAuthOptions = {
         token.contact = (user as any).contact;
         token.location = (user as any).location;
       }
-  
+
       // Podrías refrescar aquí si tu token expira y tenés endpoint de refresh
       return token;
     },
-  
+
+
     async session({ session, token }) {
       session.user = {
         name: (token.name as string) ?? session.user?.name ?? null,
@@ -103,35 +108,34 @@ export const authOptions: NextAuthOptions = {
         contact: token.contact as any,
         location: token.location as any,
       } as any;
-  
+    
       (session as any).accessToken = token.accessToken;
-  
-      // Enriquecer con datos actualizados del backend
+    
       try {
         if (token.accessToken) {
-          const res = await fetch(`${process.env.API_URL}/auth/me`, {
-            headers: { Authorization: `Bearer ${token.accessToken}` },
+          const me = await apiFetchJsonSoft('/auth/me', {
+            headers: { Authorization: `Bearer ${token.accessToken as string}` },
           });
-          if (res.ok) {
-            const fullUser = await res.json();
-            session.user.contact = fullUser.contact ?? session.user.contact ?? null;
-            session.user.location = fullUser.location ?? session.user.location ?? null;
-            // Podés actualizar firstName/lastName si el backend tiene esos campos
+    
+          if (me.ok && me.data) {
+            session.user.contact = me.data.contact ?? session.user.contact ?? null;
+            session.user.location = me.data.location ?? session.user.location ?? null;
           } else {
-            console.warn("auth/me failed:", res.status, await res.text());
+            console.warn('auth/me failed:', me.status, me.data);
+            // No lanzamos: seguimos con la sesión base
           }
         }
       } catch (e) {
-        console.warn("No se pudo enriquecer la sesión con /auth/me", e);
+        console.warn('No se pudo enriquecer la sesión con /auth/me', e);
       }
-  
+    
       return session;
-    },
+    }
+    
   }
-  
+
 
 };
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
-``

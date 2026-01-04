@@ -74,8 +74,6 @@ export default function Sidebar({ userName = "Usuario" }: Props) {
                 </div>
             </aside>
 
-            {/* Espaciador para que el main no quede debajo del aside en desktop */}
-            <div className="w-64 hidden md:block" />
         </>
     );
 }
