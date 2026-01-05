@@ -7,6 +7,7 @@ import { unstable_noStore as noStore } from "next/cache";
 import ListAddress from "@/components/dashboard/contact/ListAddress";
 import type { Session } from "@/types/Session";
 import { apiFetchJson } from "@/lib/api";
+import { CompanyAndWebsite } from "@/components/dashboard/contact/CompanyAndWebsite";
 
 export default async function ContactPage() {
   noStore();
@@ -47,6 +48,7 @@ export default async function ContactPage() {
       <p className="mt-2 text-gray-600">Cargar Tarjeta de contacto</p>
       {/* ✅ Ya NO paso el accessToken al cliente */}
       <ListAddress addresses={addresses} contactId={contactId} />
+      <CompanyAndWebsite contact={contact} />
     </div>
   );
 }
