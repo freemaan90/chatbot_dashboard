@@ -1,8 +1,12 @@
 "use client";
 
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function UserForm() {
+  const router = useRouter();
+
   const [form, setForm] = useState({
     phone: "",
     firstName: "",
@@ -24,6 +28,7 @@ export default function UserForm() {
     setMessage("");
 
     try {
+      //  1. Crear el usuario
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -33,6 +38,21 @@ export default function UserForm() {
       if (!res.ok) throw new Error("Error al crear usuario");
 
       setMessage("Usuario creado correctamente");
+
+      // 2. Hacer login
+      const auth = await signIn("credentials", {
+        redirect: false, // manejamos nosotros el redirect
+        email: form.email,
+        password: form.password,
+        // opcional: callbackUrl: "/dashboard"
+      });
+
+      if (auth?.error) {
+        setMessage("Credenciales incorrectas");
+        setLoading(false);
+        return;
+      }
+      // 3. Limpiamos el form
       setForm({
         phone: "",
         firstName: "",
@@ -40,6 +60,8 @@ export default function UserForm() {
         email: "",
         password: "",
       });
+      // 4. Redirigimos
+      router.replace("/dashboard");
     } catch (err: any) {
       setMessage(err.message);
     } finally {

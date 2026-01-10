@@ -25,7 +25,7 @@ export default function LoginForm() {
       redirect: false,             // manejamos nosotros el redirect
       email: form.email,
       password: form.password,
-      // opcional: callbackUrl: "/dashboard",
+      // opcional: callbackUrl: "/dashboard"
     });
 
     if (res?.error) {
