@@ -1,10 +1,12 @@
-
 "use client";
 
 import { Address } from "@/types/Address";
 import { useState } from "react";
 import { FORM_INITIAL_STATE } from "./utils/FormInitialState";
-import { apiFetchJson } from "@/lib/api";
+import {
+  deleteAddressAction,
+  saveAddressAction,
+} from "@/app/dashboard/contact/actions";
 // Opcional si querés refrescar data del server luego de cambios:
 // import { useRouter } from "next/navigation";
 
@@ -16,7 +18,11 @@ interface Props {
 
 type AddressForm = Partial<Address>;
 
-export default function ListAddress({ addresses, accessToken, contactId }: Props) {
+export default function ListAddress({
+  addresses,
+  accessToken,
+  contactId,
+}: Props) {
   const [items, setItems] = useState<Address[]>(addresses ?? []);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -54,84 +60,69 @@ export default function ListAddress({ addresses, accessToken, contactId }: Props
     setLoading(true);
     setError(null);
 
-    const body = {
-      street: form.street,
-      city: form.city,
-      state: form.state,
-      zip: form.zip,
-      country: form.country,
-      country_code: form.country_code,
-      type: form.type,
-    };
+    const result = await saveAddressAction({
+      form,
+      contactId,
+      editingId,
+      accessToken,
+    });
 
-    const isEditing = !!editingId;
-    const path = isEditing
-      ? `contact/${contactId}/addresses/${editingId}`
-      : `contact/${contactId}/addresses`;
-    const method = isEditing ? `PATCH` : `POST`;
-    const headers = {
-      "Content-Type": "application/json",
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    }
-
-    try {
-      const saved: Address = await apiFetchJson(path, {
-        method,
-        body,
-        headers
-      });
-
-      // ✅ Actualización optimista:
-      if (isEditing) {
-        setItems((prev) =>
-          prev.map((it) => (String(it.id) === String(saved.id) ? saved : it))
-        );
-      } else {
-        setItems((prev) => [saved, ...prev]);
-      }
-
-      setOpen(false);
-      setEditingId(null);
-      setForm(FORM_INITIAL_STATE);
-
-      // Si querés revalidar del lado server:
-      // router.refresh();
-    } catch (err: any) {
-      setError(err?.message ?? "No se pudo guardar la dirección.");
-    } finally {
+    if (!result.success) {
+      setError(result.error!);
       setLoading(false);
+      return;
     }
+
+    const saved = result.data!;
+
+    // Optimistic update
+    if (editingId) {
+      setItems((prev) =>
+        prev.map((it) => (String(it.id) === String(saved.id) ? saved : it))
+      );
+    } else {
+      setItems((prev) => [saved, ...prev]);
+    }
+
+    setOpen(false);
+    setEditingId(null);
+    setForm(FORM_INITIAL_STATE);
+    setLoading(false);
+
+    // Si querés revalidar:
+    // router.refresh();
   };
 
   const onDelete = async (addressId: string | number) => {
-    const confirm = window.confirm("¿Seguro que querés eliminar esta dirección?");
-
-    if (!confirm) return;
+    const confirmDelete = window.confirm(
+      "¿Seguro que querés eliminar esta dirección?"
+    );
+    if (!confirmDelete) return;
 
     setLoading(true);
     setError(null);
 
-    try {
-      const path = `contact/${contactId}/addresses/${addressId}`;
-      const method = `DELETE`;
-      const headers = {
-        "Content-Type": "application/json",
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      }
-      const body = {}
-      await apiFetchJson(path, {
-        method,
-        body,
-        headers
-      });
-      // ✅ Actualización optimista (remover del listado)
-      setItems((prev) => prev.filter((it) => String(it.id) !== String(addressId)));
-      // router.refresh();
-    } catch (err: any) {
-      setError(err?.message ?? "No se pudo eliminar la dirección.");
-    } finally {
+    const result = await deleteAddressAction({
+      contactId,
+      addressId,
+      accessToken,
+    });
+
+    if (!result.success) {
+      setError(result.error!);
       setLoading(false);
+      return;
     }
+
+    // Optimistic update
+    setItems((prev) =>
+      prev.filter((it) => String(it.id) !== String(addressId))
+    );
+
+    setLoading(false);
+
+    // Si querés revalidar:
+    // router.refresh();
   };
 
   return (
@@ -162,13 +153,19 @@ export default function ListAddress({ addresses, accessToken, contactId }: Props
                 <div>
                   <p className="text-gray-900 font-medium">{address.street}</p>
                   <p className="text-gray-600 text-sm">
-                    {[address.city, address.state, address.zip].filter(Boolean).join(", ")}
+                    {[address.city, address.state, address.zip]
+                      .filter(Boolean)
+                      .join(", ")}
                   </p>
                   {address.country && (
-                    <p className="text-gray-500 text-xs mt-1">{address.country}</p>
+                    <p className="text-gray-500 text-xs mt-1">
+                      {address.country}
+                    </p>
                   )}
                   {address.type && (
-                    <p className="text-gray-400 text-xs mt-1">Tipo: {address.type}</p>
+                    <p className="text-gray-400 text-xs mt-1">
+                      Tipo: {address.type}
+                    </p>
                   )}
                 </div>
 
@@ -228,7 +225,9 @@ export default function ListAddress({ addresses, accessToken, contactId }: Props
 
             <form onSubmit={onSubmit} className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Calle</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Calle
+                </label>
                 <input
                   name="street"
                   value={form.street ?? ""}
@@ -240,7 +239,9 @@ export default function ListAddress({ addresses, accessToken, contactId }: Props
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Ciudad</label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Ciudad
+                  </label>
                   <input
                     name="city"
                     value={form.city ?? ""}
@@ -266,7 +267,9 @@ export default function ListAddress({ addresses, accessToken, contactId }: Props
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Código postal</label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Código postal
+                  </label>
                   <input
                     name="zip"
                     value={form.zip ?? ""}
@@ -276,7 +279,9 @@ export default function ListAddress({ addresses, accessToken, contactId }: Props
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">País</label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    País
+                  </label>
                   <input
                     name="country"
                     value={form.country ?? ""}
@@ -289,7 +294,9 @@ export default function ListAddress({ addresses, accessToken, contactId }: Props
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Código país</label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Código país
+                  </label>
                   <input
                     name="country_code"
                     value={form.country_code ?? ""}
@@ -299,7 +306,9 @@ export default function ListAddress({ addresses, accessToken, contactId }: Props
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Tipo</label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Tipo
+                  </label>
                   <input
                     name="type"
                     value={form.type ?? ""}
@@ -327,7 +336,13 @@ export default function ListAddress({ addresses, accessToken, contactId }: Props
                   disabled={loading}
                   className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-60"
                 >
-                  {loading ? (editingId ? "Guardando cambios..." : "Guardando...") : (editingId ? "Guardar cambios" : "Guardar")}
+                  {loading
+                    ? editingId
+                      ? "Guardando cambios..."
+                      : "Guardando..."
+                    : editingId
+                    ? "Guardar cambios"
+                    : "Guardar"}
                 </button>
               </div>
             </form>

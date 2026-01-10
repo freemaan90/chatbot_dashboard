@@ -47,7 +47,7 @@ export default async function ContactPage() {
       <h2 className="text-xl font-semibold">Contacto</h2>
       <p className="mt-2 text-gray-600">Cargar Tarjeta de contacto</p>
       {/* ✅ Ya NO paso el accessToken al cliente */}
-      <ListAddress addresses={addresses} contactId={contactId} />
+      <ListAddress accessToken={token} addresses={addresses} contactId={contactId} />
       <CompanyAndWebsite contact={contact} />
     </div>
   );
