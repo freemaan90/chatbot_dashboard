@@ -88,9 +88,6 @@ export default function ListAddress({
     setEditingId(null);
     setForm(FORM_INITIAL_STATE);
     setLoading(false);
-
-    // Si querés revalidar:
-    // router.refresh();
   };
 
   const onDelete = async (addressId: string | number) => {
@@ -120,9 +117,6 @@ export default function ListAddress({
     );
 
     setLoading(false);
-
-    // Si querés revalidar:
-    // router.refresh();
   };
 
   return (
