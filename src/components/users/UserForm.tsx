@@ -1,11 +1,14 @@
 "use client";
 
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useLogin } from "@/hooks/useLogin";
 
 export default function UserForm() {
   const router = useRouter();
+  const { login } = useLogin();
+
+  const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
     phone: "",
@@ -13,6 +16,7 @@ export default function UserForm() {
     lastName: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -24,43 +28,36 @@ export default function UserForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setMessage("");
 
+    // Validación de password
+    if (form.password !== form.confirmPassword) {
+      setMessage("Las contraseñas no coinciden");
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      //  1. Crear el usuario
+      // 1. Crear usuario
+      const { confirmPassword, ...formWidthoutConfirmPassword } = form;
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(formWidthoutConfirmPassword),
       });
 
       if (!res.ok) throw new Error("Error al crear usuario");
 
-      setMessage("Usuario creado correctamente");
+      // 2. Login automático usando el hook
+      const logged = await login(form.email, form.password);
 
-      // 2. Hacer login
-      const auth = await signIn("credentials", {
-        redirect: false, // manejamos nosotros el redirect
-        email: form.email,
-        password: form.password,
-        // opcional: callbackUrl: "/dashboard"
-      });
-
-      if (auth?.error) {
-        setMessage("Credenciales incorrectas");
-        setLoading(false);
+      if (!logged) {
+        setMessage("Usuario creado, pero error al iniciar sesión");
         return;
       }
-      // 3. Limpiamos el form
-      setForm({
-        phone: "",
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: "",
-      });
-      // 4. Redirigimos
+
+      // 3. Redirigir
       router.replace("/dashboard");
     } catch (err: any) {
       setMessage(err.message);
@@ -83,6 +80,7 @@ export default function UserForm() {
         className="border p-2 rounded"
         required
       />
+
       <input
         type="text"
         name="lastName"
@@ -92,6 +90,7 @@ export default function UserForm() {
         className="border p-2 rounded"
         required
       />
+
       <input
         type="email"
         name="email"
@@ -99,15 +98,49 @@ export default function UserForm() {
         value={form.email}
         onChange={handleChange}
         className="border p-2 rounded"
+        required
       />
-      <input
-        type="password"
-        name="password"
-        placeholder="Password"
-        value={form.password}
-        onChange={handleChange}
-        className="border p-2 rounded"
-      />
+
+      {/* Password */}
+      <div className="relative">
+        <input
+          type={showPassword ? "text" : "password"}
+          name="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+          className="border p-2 rounded w-full"
+          required
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute right-2 top-2 text-sm text-gray-600"
+        >
+          {showPassword ? "Ocultar" : "Mostrar"}
+        </button>
+      </div>
+
+      {/* Confirm Password */}
+      <div className="relative">
+        <input
+          type={showPassword ? "text" : "password"}
+          name="confirmPassword"
+          placeholder="Confirmar Password"
+          value={form.confirmPassword}
+          onChange={handleChange}
+          className="border p-2 rounded w-full"
+          required
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute right-2 top-2 text-sm text-gray-600"
+        >
+          {showPassword ? "Ocultar" : "Mostrar"}
+        </button>
+      </div>
+
       <input
         type="text"
         name="phone"
@@ -127,7 +160,7 @@ export default function UserForm() {
       </button>
 
       {message && (
-        <p className="text-center text-sm text-gray-700 mt-2">{message}</p>
+        <p className="text-center text-sm text-red-600 mt-2">{message}</p>
       )}
     </form>
   );
