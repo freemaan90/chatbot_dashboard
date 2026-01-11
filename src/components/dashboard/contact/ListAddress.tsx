@@ -7,8 +7,6 @@ import {
   deleteAddressAction,
   saveAddressAction,
 } from "@/app/dashboard/contact/actions";
-// Opcional si querés refrescar data del server luego de cambios:
-// import { useRouter } from "next/navigation";
 
 interface Props {
   addresses: Address[];
@@ -29,7 +27,6 @@ export default function ListAddress({
   const [editingId, setEditingId] = useState<string | number | null>(null);
   const [form, setForm] = useState<AddressForm>(FORM_INITIAL_STATE);
   const [error, setError] = useState<string | null>(null);
-  // const router = useRouter();
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
