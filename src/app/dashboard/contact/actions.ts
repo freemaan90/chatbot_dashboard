@@ -124,7 +124,6 @@ export async function deleteAddressAction({
   try {
     const path = `contact/${contactId}/addresses/${addressId}`;
     const method = "DELETE";
-    console.log(accessToken)
     const headers = {
       "Content-Type": "application/json",
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),

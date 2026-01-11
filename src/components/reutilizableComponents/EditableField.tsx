@@ -19,7 +19,6 @@ export function EditableField({
   onSave,
   onDelete,
 }: EditableFieldProps) {
-  console.log(typeof initialValue);
   
   const initialString = initialValue !== null ? String(initialValue) : "";
   const [isEditing, setIsEditing] = useState(!initialString);

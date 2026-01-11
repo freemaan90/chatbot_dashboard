@@ -26,7 +26,6 @@ export default async function WhatsappPage() {
   });
 
   const whatsapp: WhatsApp = me?.whatsapp ?? session?.user?.whatsapp ?? null;
-  console.log(whatsapp);
 
   return (
     <div className="p-6 bg-white rounded shadow">

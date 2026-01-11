@@ -32,7 +32,6 @@ export async function updateBussinesPhone(whatsappId: string, bussinesPhone: str
     body: { bussinesPhone },
     cache: "no-store",
   });
-  console.log(updated)
   return updated.bussines_phone
 }
 
