@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useSession, signIn, signOut } from "next-auth/react";
 
-export default function Navbar() {
+export default function Header() {
   const { data: session, status } = useSession();
   const loading = status === "loading";
 
@@ -14,7 +14,7 @@ export default function Navbar() {
         {/* Logo / Home */}
         <div className="flex items-center gap-3">
           <Link href="/" className="font-semibold">
-            Mi App
+            FZolutions
           </Link>
           <Link href="/dashboard" className="text-sm text-gray-600 hover:text-black">
             Dashboard

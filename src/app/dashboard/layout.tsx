@@ -6,17 +6,17 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import Sidebar from "@/components/dashboard/Sidebar";
 
+// app/dashboard/layout.tsx
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
-  
+
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar fijo a la izquierda */}
+    <div className="flex flex-1 overflow-hidden">
       <Sidebar userName={session.user?.name ?? "Usuario"} />
 
-      {/* Contenido principal */}
-      <main className="flex-1 p-6">
+      {/* Contenido scrollable */}
+      <main className="flex-1 p-6 overflow-auto">
         {children}
       </main>
     </div>

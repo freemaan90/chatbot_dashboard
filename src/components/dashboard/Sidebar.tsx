@@ -67,11 +67,6 @@ export default function Sidebar({ userName = "Usuario" }: Props) {
                         );
                     })}
                 </nav>
-
-                {/* Footer del sidebar (opcional) */}
-                <div className="mt-auto p-3 text-xs text-gray-400 hidden md:block">
-                    © {new Date().getFullYear()} Mi App
-                </div>
             </aside>
 
         </>
