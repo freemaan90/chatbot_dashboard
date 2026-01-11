@@ -1,5 +1,7 @@
 
 import { apiFetchJson, apiFetchJsonSoft } from "@/lib/api";
+import { Contact } from "@/types/Contact";
+import { WhatsApp } from "@/types/WhatsApp";
 import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
@@ -61,15 +63,13 @@ export const authOptions: NextAuthOptions = {
             phone: user.phone ?? null,
             contact: user.contact ?? null,
             location: user.location ?? null,
+            whatsapp: user.whatsapp ?? null
           } as any;
         } catch (e) {
           console.warn('Login failed:', e);
           return null;
         }
       }
-      
-
-
     }),
   ],
   pages: {
@@ -90,6 +90,7 @@ export const authOptions: NextAuthOptions = {
         token.phone = (user as any).phone;
         token.contact = (user as any).contact;
         token.location = (user as any).location;
+        token.whatsapp = (user as any).whatsapp
       }
 
       // Podrías refrescar aquí si tu token expira y tenés endpoint de refresh
@@ -97,40 +98,43 @@ export const authOptions: NextAuthOptions = {
     },
 
 
-    async session({ session, token }) {
-      session.user = {
-        name: (token.name as string) ?? session.user?.name ?? null,
-        email: (token.email as string) ?? session.user?.email ?? null,
-        image: session.user?.image ?? null,
-        id: token.id as string | undefined,
-        lastName: token.lastName as string | undefined,
-        phone: token.phone as string | undefined,
-        contact: token.contact as any,
-        location: token.location as any,
-      } as any;
-    
-      (session as any).accessToken = token.accessToken;
-    
-      try {
-        if (token.accessToken) {
-          const me = await apiFetchJsonSoft('/auth/me', {
-            headers: { Authorization: `Bearer ${token.accessToken as string}` },
-          });
-    
-          if (me.ok && me.data) {
-            session.user.contact = me.data.contact ?? session.user.contact ?? null;
-            session.user.location = me.data.location ?? session.user.location ?? null;
-          } else {
-            console.warn('auth/me failed:', me.status, me.data);
-            // No lanzamos: seguimos con la sesión base
-          }
-        }
-      } catch (e) {
-        console.warn('No se pudo enriquecer la sesión con /auth/me', e);
+async session({ session, token }) {
+  session.user = {
+    id: token.id as string,
+    name: token.name as string,
+    lastName: token.lastName as string,
+    email: token.email as string,
+    phone: token.phone as string,
+    contact: token.contact as Contact,
+    location: token.location,
+    whatsapp: token.whatsapp as WhatsApp,
+    image: session.user?.image ?? null
+  };
+
+  (session as any).accessToken = token.accessToken;
+
+  try {
+    if (token.accessToken) {
+      const me = await apiFetchJsonSoft('/auth/me', {
+        headers: { Authorization: `Bearer ${token.accessToken}` },
+      });
+
+      if (me.ok && me.data) {
+        session.user.contact = me.data.contact ?? session.user.contact;
+        session.user.location = me.data.location ?? session.user.location;
+        session.user.whatsapp = me.data.whatsapp ?? session.user.whatsapp;
+
+        // Si tu backend devuelve name y lastName, refrescarlos también
+        session.user.name = me.data.name ?? session.user.name;
+        session.user.lastName = me.data.lastName ?? session.user.lastName;
       }
-    
-      return session;
     }
+  } catch (e) {
+    console.warn("No se pudo enriquecer la sesión con /auth/me", e);
+  }
+
+  return session;
+}
     
   }
 

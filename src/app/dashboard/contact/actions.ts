@@ -16,54 +16,52 @@ async function ensureAuth() {
 export async function updateCompany(contactId: string, company: string | null) {
   const token = await ensureAuth();
   const payload = { company };
-  return apiFetchJson(`/contact/${contactId}/company`, {
+  const updated = await apiFetchJson(`/contact/${contactId}/company`, {
     method: "PATCH",
     headers: { Authorization: `Bearer ${token}` },
     body: payload,
     cache: "no-store",
   });
+  return updated.company
 }
 
 /** PATCH parcial: actualiza solo website */
 export async function updateWebsite(contactId: string, website: string | null) {
   const token = await ensureAuth();
   const payload = { website };
-  return apiFetchJson(`/contact/${contactId}/website`, {
+  const updated = await apiFetchJson(`/contact/${contactId}/website`, {
     method: "PATCH",
     headers: { Authorization: `Bearer ${token}` },
     body: payload,
     cache: "no-store",
   });
+  return updated.website
 }
 
 /** “Eliminar” empresa = setear null */
 export async function deleteCompany(contactId: string) {
   const token = await ensureAuth();
   const payload = {};
-  const deleted = apiFetchJson(`/contact/${contactId}/company`, {
+  await apiFetchJson(`/contact/${contactId}/company`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
     body: payload,
     cache: "no-store",
   });
-  // ✅ Esto marca la ruta para revalidar SSR
-  revalidatePath("/dashboard/contact");
-  return deleted;
+  return null;
 }
 
 /** “Eliminar” website = setear null */
 export async function deleteWebsite(contactId: string) {
   const token = await ensureAuth();
   const payload = {};
-  const deleted = apiFetchJson(`/contact/${contactId}/website`, {
+  await apiFetchJson(`/contact/${contactId}/website`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
     body: payload,
     cache: "no-store",
   });
-  // ✅ Esto marca la ruta para revalidar SSR
-  revalidatePath("/dashboard/contact");
-  return deleted;
+  return null;
 }
 
 export async function saveAddressAction({
@@ -99,7 +97,6 @@ export async function saveAddressAction({
       "Content-Type": "application/json",
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     };
-    console.log(accessToken)
     const saved: Address = await apiFetchJson(path, {
       method,
       body,

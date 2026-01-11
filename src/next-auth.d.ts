@@ -17,12 +17,11 @@ declare module "next-auth/jwt" {
     id?: number | string;
     name?: string | null;
     email?: string | null;
-
     lastName?: string;
     phone?: string;
     contact?: unknown;
     location?: unknown;
-
+    whatsapp?: unknown;
     accessToken?: string;
   }
 }
